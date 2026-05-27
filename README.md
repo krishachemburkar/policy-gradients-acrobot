@@ -73,15 +73,15 @@ $$
 
 # Episode 0
 
-![Episode 0](videos/rl-video-episode-0.gif)
+![Episode 0](videos/episode-0.gif)
 
 # Episode 400
 
-![Episode 400](videos/rl-video-episode-400.gif)
+![Episode 400](videos/episode-400.gif)
 
 # Episode 800
 
-![Episode 800](videos/rl-video-episode-800.gif)
+![Episode 800](videos/episode-800.gif)
 
 ---
 
