@@ -435,16 +435,19 @@ In Acrobot, rewards are negative because the agent receives `-1` at every timest
 
 ### REINFORCE
 
-![REINFORCE Acrobot](gifs/acrobot_reinforce.gif)
+![REINFORCE Acrobot](gifs/re.gif)
 
 ### Monte Carlo Actor-Critic
 
-![MC Actor-Critic Acrobot](gifs/acrobot_mc_ac.gif)
+![MC Actor-Critic Acrobot](gifs/## Results on Acrobot-v1
 
-### TD Actor-Critic
+In Acrobot, rewards are negative because the agent receives `-1` at every timestep until the episode ends. Therefore, returns closer to `0` indicate shorter episodes and generally better task completion.
 
-![TD Actor-Critic Acrobot](gifs/acrobot_td_ac.gif)
----
+| Algorithm | Episodes | Observed Behavior |
+|---|---:|---|
+| REINFORCE | 3000 | Improves from around `-500` toward around `-100` |
+| MC Actor-Critic | 3000 | Improves more gradually, with eval returns often near `-80` to `-100` |
+| TD Actor-Critic | 5000 | Learns steadily and reaches around `-100` eval return |
 
 ## Training Curves
 
@@ -460,21 +463,20 @@ In Acrobot, rewards are negative because the agent receives `-1` at every timest
 
 ![TD Actor-Critic Acrobot](plots/acrobot_td_ac.png)
 
----
+## Policy Behavior GIFs
 
-## Inference Results
+### REINFORCE
 
-Example TD Actor-Critic inference returns:
+![REINFORCE Acrobot](gifs/episode-reinforce-acrobot.gif)
 
-```text
-Episode 1: -66
-Episode 2: -112
-Episode 3: -64
-Episode 4: -72
-Episode 5: -129
-```
+### Monte Carlo Actor-Critic
 
-Average return is approximately `-89`, meaning the policy usually reaches the target in about 89 steps.
+![MC Actor-Critic Acrobot](gifs/episode-mc-ac-acrobot.gif)
+
+### TD Actor-Critic
+
+![TD Actor-Critic Acrobot](gifs/episode-td-ac-acrobot.gif)
+
 
 ---
 
