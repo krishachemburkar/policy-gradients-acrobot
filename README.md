@@ -1,4 +1,4 @@
-# Policy Gradient using REINFORCE on CartPole
+<!-- # Policy Gradient using REINFORCE on CartPole
 
 ## Overview
 
@@ -254,4 +254,352 @@ The agent learns entirely through:
 - reward signals
 - policy optimization
 
-without any supervised labels or expert trajectories.
+without any supervised labels or expert trajectories. -->
+
+
+# Policy Gradient Algorithms on Acrobot
+
+This project implements and compares three policy-gradient based reinforcement learning algorithms on the `Acrobot-v1` environment:
+
+- REINFORCE
+- Monte Carlo Actor-Critic
+- TD Actor-Critic
+
+---
+
+## Environment: Acrobot-v1
+
+Acrobot is a two-link robotic arm. The top joint is fixed, and the agent controls the torque at the middle joint.
+
+The goal is to swing the lower tip of the arm above a target height.
+
+Unlike CartPole, Acrobot is not about balancing. It is about building momentum over multiple steps.
+
+```text
+Initial behavior:
+flails randomly
+
+Learned behavior:
+swing → swing → swing → tip crosses target height
+```
+
+---
+
+## Reward Structure
+
+Acrobot gives:
+
+$$
+-1
+$$
+
+reward at every timestep until the goal is reached.
+
+So the return is negative:
+
+```text
+Return = -number_of_steps_taken
+```
+
+This means:
+
+| Return | Meaning |
+|---:|---|
+| -500 | Failed or took max time |
+| -200 | Poor |
+| -100 | Good |
+| -70 | Very good |
+| closer to 0 | Better |
+
+A policy with return around `-70` solves the task much faster than one with return around `-500`.
+
+---
+
+## Algorithms Implemented
+
+### 1. REINFORCE
+
+REINFORCE directly updates the policy using discounted returns.
+
+Policy loss:
+
+$$
+L = -\sum_t \log \pi_\theta(a_t|s_t)G_t
+$$
+
+where:
+
+$$
+G_t = r_t + \gamma r_{t+1} + \gamma^2r_{t+2}+...
+$$
+
+This method is simple but high variance.
+
+---
+
+### 2. Monte Carlo Actor-Critic
+
+Monte Carlo Actor-Critic adds a learned value baseline.
+
+The actor learns the policy:
+
+$$
+\pi_\theta(a|s)
+$$
+
+The critic learns the state value:
+
+$$
+V_\phi(s)
+$$
+
+The advantage is:
+
+$$
+A_t = G_t - V_\phi(s_t)
+$$
+
+Actor loss:
+
+$$
+L_{actor} = -\log \pi_\theta(a_t|s_t)A_t
+$$
+
+Critic loss:
+
+$$
+L_{critic} = (V_\phi(s_t)-G_t)^2
+$$
+
+This reduces variance compared to REINFORCE.
+
+---
+
+### 3. TD Actor-Critic
+
+TD Actor-Critic updates after every environment step using the TD error.
+
+TD target:
+
+$$
+r_t + \gamma V(s_{t+1})
+$$
+
+TD error:
+
+$$
+\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)
+$$
+
+Actor loss:
+
+$$
+L_{actor} = -\log \pi_\theta(a_t|s_t)\delta_t
+$$
+
+Critic loss:
+
+$$
+L_{critic} = \delta_t^2
+$$
+
+TD learning gives faster feedback because it does not wait for the full episode to finish.
+
+---
+
+## Results on Acrobot-v1
+
+In Acrobot, rewards are negative because the agent receives `-1` at every timestep until the episode ends. Therefore, returns closer to `0` indicate shorter episodes and generally better task completion.
+
+| Algorithm | Episodes | Observed Behavior |
+|---|---:|---|
+| REINFORCE | 3000 | Improves from around `-500` toward around `-100` |
+| MC Actor-Critic | 3000 | Improves more gradually, with eval returns often near `-80` to `-100` |
+| TD Actor-Critic | 5000 | Learns steadily and reaches around `-100` eval return |
+
+## Training Curves
+
+### REINFORCE
+
+![REINFORCE Acrobot](plots/acrobot_reinforce.png)
+
+### Monte Carlo Actor-Critic
+
+![MC Actor-Critic Acrobot](plots/acrobot_mc_ac.png)
+
+### TD Actor-Critic
+
+![TD Actor-Critic Acrobot](plots/acrobot_td_ac.png)
+
+## Policy Behavior GIFs
+
+### REINFORCE
+
+![REINFORCE Acrobot](gifs/acrobot_reinforce.gif)
+
+### Monte Carlo Actor-Critic
+
+![MC Actor-Critic Acrobot](gifs/acrobot_mc_ac.gif)
+
+### TD Actor-Critic
+
+![TD Actor-Critic Acrobot](gifs/acrobot_td_ac.gif)
+---
+
+## Training Curves
+
+### REINFORCE
+
+![REINFORCE Acrobot](plots/acrobot_reinforce.png)
+
+### Monte Carlo Actor-Critic
+
+![MC Actor-Critic Acrobot](plots/acrobot_mc_ac.png)
+
+### TD Actor-Critic
+
+![TD Actor-Critic Acrobot](plots/acrobot_td_ac.png)
+
+---
+
+## Inference Results
+
+Example TD Actor-Critic inference returns:
+
+```text
+Episode 1: -66
+Episode 2: -112
+Episode 3: -64
+Episode 4: -72
+Episode 5: -129
+```
+
+Average return is approximately `-89`, meaning the policy usually reaches the target in about 89 steps.
+
+---
+
+## How to Train
+
+### REINFORCE
+
+```bash
+python main.py \
+--algo reinforce \
+--env Acrobot-v1 \
+--episodes 3000 \
+--actor_lr 3e-4 \
+--gamma 0.99 \
+--model_name models/acrobot_reinforce \
+--log_file logs/acrobot_reinforce.txt \
+--plot_file plots/acrobot_reinforce.png
+```
+
+### Monte Carlo Actor-Critic
+
+```bash
+python main.py \
+--algo mc_ac \
+--env Acrobot-v1 \
+--episodes 3000 \
+--actor_lr 1e-4 \
+--critic_lr 3e-4 \
+--gamma 0.99 \
+--model_name models/acrobot_mc_ac \
+--log_file logs/acrobot_mc_ac.txt \
+--plot_file plots/acrobot_mc_ac.png
+```
+
+### TD Actor-Critic
+
+```bash
+python main.py \
+--algo td_ac \
+--env Acrobot-v1 \
+--episodes 5000 \
+--actor_lr 5e-5 \
+--critic_lr 3e-4 \
+--gamma 0.99 \
+--model_name models/acrobot_td_ac \
+--log_file logs/acrobot_td_ac.txt \
+--plot_file plots/acrobot_td_ac.png
+```
+
+---
+
+## Run All Experiments
+
+```bash
+python run.py
+```
+
+This runs all configured experiments and saves:
+
+```text
+logs/
+models/
+plots/
+videos/
+```
+
+---
+
+## Inference
+
+```bash
+python inference.py \
+--env Acrobot-v1 \
+--model_path models/acrobot_td_ac_best_policy.pth \
+--inference_episodes 5
+```
+
+To save inference videos:
+
+```bash
+python inference.py \
+--env Acrobot-v1 \
+--model_path models/acrobot_td_ac_best_policy.pth \
+--inference_episodes 5 \
+--save_video \
+--video_folder inference_videos/acrobot_td_ac
+```
+
+---
+
+## Project Structure
+
+```text
+.
+├── algorithms/
+│   ├── reinforce.py
+│   ├── mc_actor_critic.py
+│   └── td_actor_critic.py
+├── args.py
+├── inference.py
+├── main.py
+├── network.py
+├── run.py
+├── utils.py
+├── logs/
+├── models/
+├── plots/
+└── videos/
+```
+
+---
+
+## Key Takeaways
+
+- REINFORCE is simple but noisy.
+- Monte Carlo Actor-Critic reduces variance using a learned value baseline.
+- TD Actor-Critic learns from every step using bootstrapping.
+- Acrobot is harder than CartPole because it requires momentum-building and delayed credit assignment.
+- Negative returns are normal in Acrobot; closer to zero is better.
+
+---
+
+## Libraries Used
+
+- PyTorch
+- Gymnasium
+- NumPy
+- Matplotlib
