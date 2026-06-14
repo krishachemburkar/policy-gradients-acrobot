@@ -1,6 +1,5 @@
 import gymnasium as gym
 import torch
-import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -52,12 +51,22 @@ def evaluate_policy(policy, env_name, n_eval_episodes=5):
     return sum(episode_returns) / len(episode_returns)
 
 
-def log_training(log_file, episode, episode_return, train_avg, avg_eval_return):
+def log_training(
+    log_file,
+    episode,
+    episode_return,
+    train_avg,
+    avg_eval_return,
+    actor_loss=None,
+    critic_loss=None
+):
     log_line = (
         f"Episode: {episode}, "
         f"Train Return: {episode_return:.2f}, "
         f"Train Avg Return: {train_avg:.2f}, "
-        f"Eval Avg Return: {avg_eval_return}\n"
+        f"Eval Avg Return: {avg_eval_return}, "
+        f"Actor Loss: {actor_loss}, "
+        f"Critic Loss: {critic_loss}\n"
     )
 
     print(log_line.strip())
@@ -65,7 +74,13 @@ def log_training(log_file, episode, episode_return, train_avg, avg_eval_return):
     log_file.flush()
 
 
-def plot_returns(train_avg_returns, eval_episodes, eval_rewards, n_episode):
+def plot_returns(
+    train_avg_returns,
+    eval_episodes,
+    eval_rewards,
+    n_episode,
+    save_path
+):
     plt.figure()
 
     plt.plot(
@@ -86,5 +101,5 @@ def plot_returns(train_avg_returns, eval_episodes, eval_rewards, n_episode):
     plt.legend()
     plt.grid(True)
 
-    plt.savefig("train_eval_returns.png")
+    plt.savefig(save_path)
     plt.show()

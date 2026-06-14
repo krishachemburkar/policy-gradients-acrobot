@@ -61,7 +61,4 @@ def train_mc_actor_critic(
 
     optimizer.step()
 
-    return (
-        actor_loss.item(),
-        critic_loss.item()
-    )
+    return actor_loss.item(), critic_loss.item()

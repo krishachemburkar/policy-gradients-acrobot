@@ -19,7 +19,9 @@ from utils import (
 
 from algorithms.reinforce import train_reinforce
 from algorithms.mc_actor_critic import train_mc_actor_critic
+from algorithms.td_actor_critic import train_td_actor_critic
 
+import os
 
 algo = args.algo
 n_episode = args.episodes
@@ -40,19 +42,37 @@ train_avg_returns = []
 eval_rewards = []
 eval_episodes = []
 
-log_file = open("training_log.txt", "w")
+actor_losses = []
+critic_losses = []
 
+best_eval_return = -float("inf")
 
-env = gym.make(
-    env_name,
-    render_mode="rgb_array"
+log_file = open(args.log_file, "w")
+
+os.makedirs(
+    args.video_folder,
+    exist_ok=True
 )
 
-env = RecordVideo(
-    env,
-    video_folder="videos",
-    episode_trigger=lambda episode_id: episode_id % 500 == 0 or episode_id == n_episode - 1
-)
+if args.save_video:
+
+    env = gym.make(
+        args.env,
+        render_mode="rgb_array"
+    )
+
+    env = RecordVideo(
+        env,
+        video_folder=args.video_folder,
+        episode_trigger=lambda episode_id: True
+    )
+
+else:
+
+    env = gym.make(
+        args.env,
+        render_mode="human"
+    )
 
 
 policy = PolicyNetwork(
@@ -106,28 +126,54 @@ for episode in range(n_episode):
 
         next_state, reward, terminated, truncated, info = env.step(action.item())
 
+        current_done = terminated or truncated
+
+        if algo == "td_ac":
+            actor_loss_value, critic_loss_value = train_td_actor_critic(
+                baseline=baseline,
+                baseline_optimizer=baseline_optimizer,
+                baseline_criterion=baseline_criterion,
+                optimizer=policy_optimizer,
+                log_prob=log_prob,
+                state=state,
+                reward=reward,
+                next_state=next_state,
+                done=current_done,
+                gamma=gamma
+            )
+
+            actor_losses.append(actor_loss_value)
+            critic_losses.append(critic_loss_value)
+
         states.append(state)
         actions.append(action.item())
         rewards.append(reward)
         log_probs.append(log_prob)
 
         state = next_state
-        done = terminated or truncated
-
-    returns = get_discounted_rewards(
-        rewards,
-        gamma
-    )
+        done = current_done
 
     if algo == "reinforce":
-        train_reinforce(
+        returns = get_discounted_rewards(
+            rewards,
+            gamma
+        )
+
+        loss_value = train_reinforce(
             policy_optimizer,
             log_probs,
             returns
         )
 
+        actor_losses.append(loss_value)
+
     elif algo == "mc_ac":
-        train_mc_actor_critic(
+        returns = get_discounted_rewards(
+            rewards,
+            gamma
+        )
+
+        actor_loss_value, critic_loss_value = train_mc_actor_critic(
             baseline,
             baseline_optimizer,
             baseline_criterion,
@@ -136,6 +182,12 @@ for episode in range(n_episode):
             returns,
             log_probs
         )
+
+        actor_losses.append(actor_loss_value)
+        critic_losses.append(critic_loss_value)
+
+    elif algo == "td_ac":
+        pass
 
     else:
         raise ValueError(f"Unknown or unimplemented algo: {algo}")
@@ -158,12 +210,33 @@ for episode in range(n_episode):
         eval_rewards.append(avg_eval_return)
         eval_episodes.append(episode + 1)
 
+        if avg_eval_return > best_eval_return:
+            best_eval_return = avg_eval_return
+
+            torch.save(
+                policy.state_dict(),
+                f"{args.model_name}_best_policy.pth"
+            )
+
+            if baseline is not None:
+                torch.save(
+                    baseline.state_dict(),
+                    f"{args.model_name}_best_critic.pth"
+                )
+
+            print(f"New best eval return: {best_eval_return:.2f}. Model saved.")
+
+    avg_actor_loss = np.mean(actor_losses[-100:]) if len(actor_losses) > 0 else None
+    avg_critic_loss = np.mean(critic_losses[-100:]) if len(critic_losses) > 0 else None
+
     log_training(
         log_file=log_file,
         episode=episode + 1,
         episode_return=episode_return,
         train_avg=train_avg,
-        avg_eval_return=avg_eval_return
+        avg_eval_return=avg_eval_return,
+        actor_loss=avg_actor_loss,
+        critic_loss=avg_critic_loss
     )
 
 
@@ -173,13 +246,13 @@ log_file.close()
 
 torch.save(
     policy.state_dict(),
-    "policy_model.pth"
+    f"{args.model_name}_final_policy.pth"
 )
 
 if baseline is not None:
     torch.save(
         baseline.state_dict(),
-        "baseline_model.pth"
+        f"{args.model_name}_final_critic.pth"
     )
 
 
@@ -187,5 +260,6 @@ plot_returns(
     train_avg_returns=train_avg_returns,
     eval_episodes=eval_episodes,
     eval_rewards=eval_rewards,
-    n_episode=n_episode
+    n_episode=n_episode,
+    save_path=args.plot_file
 )
