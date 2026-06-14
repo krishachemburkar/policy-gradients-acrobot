@@ -431,16 +431,6 @@ In Acrobot, rewards are negative because the agent receives `-1` at every timest
 
 ![TD Actor-Critic Acrobot](plots/acrobot_td_ac.png)
 
-## Policy Behavior GIFs
-
-### REINFORCE
-
-![REINFORCE Acrobot](gifs/re.gif)
-
-### Monte Carlo Actor-Critic
-
-![MC Actor-Critic Acrobot](gifs/## Results on Acrobot-v1
-
 In Acrobot, rewards are negative because the agent receives `-1` at every timestep until the episode ends. Therefore, returns closer to `0` indicate shorter episodes and generally better task completion.
 
 | Algorithm | Episodes | Observed Behavior |
@@ -449,21 +439,11 @@ In Acrobot, rewards are negative because the agent receives `-1` at every timest
 | MC Actor-Critic | 3000 | Improves more gradually, with eval returns often near `-80` to `-100` |
 | TD Actor-Critic | 5000 | Learns steadily and reaches around `-100` eval return |
 
-## Training Curves
-
-### REINFORCE
-
-![REINFORCE Acrobot](plots/acrobot_reinforce.png)
-
-### Monte Carlo Actor-Critic
-
-![MC Actor-Critic Acrobot](plots/acrobot_mc_ac.png)
-
-### TD Actor-Critic
-
-![TD Actor-Critic Acrobot](plots/acrobot_td_ac.png)
-
 ## Policy Behavior GIFs
+
+## Initial State
+
+![Episode 0](gifs/episode-0-acrobot.gif)
 
 ### REINFORCE
 
